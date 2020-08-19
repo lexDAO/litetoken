@@ -1,6 +1,6 @@
 pragma solidity 0.5.17;
-
-contract LiteToken {
+library SafeMath { function add(uint256 a, uint256 b) internal pure returns (uint256) {uint256 c = a + b; require(c >= a); return c;} function sub(uint256 a, uint256 b) internal pure returns (uint256) {require(b <= a); uint256 c = a - b; return c;}}
+contract LiteToken { using SafeMath for uint256;
     address public owner;
     string public name;
     string public symbol;
@@ -16,10 +16,10 @@ contract LiteToken {
         name = _name; symbol = _symbol; decimals = _decimals; owner = _owner; totalSupply = _totalSupply; totalSupplyCap = _totalSupplyCap; transferable = _transferable; balances[owner] = totalSupply; emit Transfer(address(0), owner, totalSupply);}
     function approve(address spender, uint256 amount) external returns (bool) {allowances[msg.sender][spender] = amount; emit Approval(msg.sender, spender, amount); return true;}
     function balanceOf(address account) external view returns (uint256) {return balances[account];}
-    function burn(uint256 amount) external {balances[msg.sender] -= amount; totalSupply -= amount; emit Transfer(msg.sender, address(0), amount);}
-    function mint(address recipient, uint256 amount) external {require(msg.sender == owner, "!owner"); require(totalSupply + amount <= totalSupplyCap, "capped"); balances[recipient] += amount; totalSupply += amount; emit Transfer(address(0), recipient, amount);}
-    function transfer(address recipient, uint256 amount) external returns (bool) {require(transferable == true); balances[msg.sender] -= amount; balances[recipient] += amount; emit Transfer(sender, recipient, amount); return true;}
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool) {require(transferable == true); balances[sender] -= amount; balances[recipient] += amount; allowances[sender][msg.sender] -= amount; emit Transfer(sender, recipient, amount); return true;}
+    function burn(uint256 amount) external {balances[msg.sender] = balances[msg.sender].sub(amount); totalSupply = totalSupply.sub(amount); emit Transfer(msg.sender, address(0), amount);}
+    function mint(address recipient, uint256 amount) external {require(msg.sender == owner, "!owner"); require(totalSupply.add(amount) <= totalSupplyCap, "capped"); balances[recipient] = balances[recipient].add(amount); totalSupply = totalSupply.add(amount); emit Transfer(address(0), recipient, amount);}
+    function transfer(address recipient, uint256 amount) external returns (bool) {require(transferable == true); balances[msg.sender] = balances[msg.sender].sub(amount); balances[recipient] = balances[recipient].add(amount); emit Transfer(msg.sender, recipient, amount); return true;}
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool) {require(transferable == true); balances[sender] = balances[sender].sub(amount); balances[recipient] = balances[recipient].add(amount); allowances[sender][msg.sender] = allowances[sender][msg.sender].sub(amount); emit Transfer(sender, recipient, amount); return true;}
     function transferOwner(address newOwner) external {require(msg.sender == owner, "!owner"); owner = newOwner;}
     function updateTransferability(bool _transferable) external {require(msg.sender == owner, "!owner"); transferable = _transferable;}
 }
