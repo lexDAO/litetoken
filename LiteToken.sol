@@ -2,7 +2,7 @@ pragma solidity 0.5.17;
 
 contract LiteToken {
     address public owner;
-    string public  name;
+    string public name;
     string public symbol;
     uint8 public decimals;
     uint256 public totalSupply;
