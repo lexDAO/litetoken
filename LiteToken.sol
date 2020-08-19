@@ -18,7 +18,7 @@ contract LiteToken {
     function balanceOf(address account) external view returns (uint256) {return balances[account];}
     function burn(uint256 amount) external {balances[msg.sender] -= amount; totalSupply -= amount; emit Transfer(msg.sender, address(0), amount);}
     function mint(address recipient, uint256 amount) external {require(msg.sender == owner, "!owner"); require(totalSupply + amount <= totalSupplyCap, "capped"); balances[recipient] += amount; totalSupply += amount; emit Transfer(address(0), recipient, amount);}
-    function transfer(address sender, address recipient, uint256 amount) external returns (bool) {require(transferable == true); balances[sender] -= amount; balances[recipient] += amount; emit Transfer(sender, recipient, amount); return true;}
+    function transfer(address recipient, uint256 amount) external returns (bool) {require(transferable == true); balances[msg.sender] -= amount; balances[recipient] += amount; emit Transfer(sender, recipient, amount); return true;}
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool) {require(transferable == true); balances[sender] -= amount; balances[recipient] += amount; allowances[sender][msg.sender] -= amount; emit Transfer(sender, recipient, amount); return true;}
     function transferOwner(address newOwner) external {require(msg.sender == owner, "!owner"); owner = newOwner;}
     function updateTransferability(bool _transferable) external {require(msg.sender == owner, "!owner"); transferable = _transferable;}
