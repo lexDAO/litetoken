@@ -1,0 +1,1 @@
+contract LiteTokenFactory {function NewLiteToken(string calldata _name, string calldata _symbol, uint8 _decimals, address _owner, uint256 _totalSupply, uint256 _totalSupplyCap, bool _transferable) external {new LiteToken(_name, _symbol, _decimals, _owner, _totalSupply, _totalSupplyCap, _transferable);}}
