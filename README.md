@@ -1,7 +1,7 @@
 # litetoken
 super simple brief erc20 - burn, mint, pause
 
-```pragma solidity 0.5.17;
+``pragma solidity 0.5.17;
 library SafeMath {function add(uint256 a, uint256 b) internal pure returns (uint256) {uint256 c = a + b; require(c >= a); return c;} function sub(uint256 a, uint256 b) internal pure returns (uint256) {require(b <= a); uint256 c = a - b; return c;}}
 contract LiteToken {using SafeMath for uint256;
     address public owner;
@@ -17,7 +17,7 @@ contract LiteToken {using SafeMath for uint256;
     mapping(address => mapping(address => uint256)) public allowances;
     constructor(string memory _name, string memory _symbol, uint8 _decimals, address _owner, uint256 _totalSupply, uint256 _totalSupplyCap, bool _transferable) public {require(_totalSupply <= _totalSupplyCap, "capped");
         name = _name; symbol = _symbol; decimals = _decimals; owner = _owner; totalSupply = _totalSupply; totalSupplyCap = _totalSupplyCap; transferable = _transferable; balances[owner] = totalSupply; emit Transfer(address(0), owner, totalSupply);}
-    function approve(address spender, uint256 amount) external returns (bool) {allowances[msg.sender][spender] = amount; emit Approval(msg.sender, spender, amount); return true;}
+    function approve(address spender, uint256 amount) external returns (bool) {if(amount != 0 && allowances[msg.sender][spender] != 0) {return false;} allowances[msg.sender][spender] = amount; emit Approval(msg.sender, spender, amount); return true;}
     function balanceOf(address account) external view returns (uint256) {return balances[account];}
     function burn(uint256 amount) external {balances[msg.sender] = balances[msg.sender].sub(amount); totalSupply = totalSupply.sub(amount); emit Transfer(msg.sender, address(0), amount);}
     function mint(address recipient, uint256 amount) external {require(msg.sender == owner, "!owner"); require(totalSupply.add(amount) <= totalSupplyCap, "capped"); balances[recipient] = balances[recipient].add(amount); totalSupply = totalSupply.add(amount); emit Transfer(address(0), recipient, amount);}
