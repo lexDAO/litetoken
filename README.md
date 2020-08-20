@@ -1,7 +1,7 @@
 # litetoken
 super simple brief erc20 - burn, mint, pause
 
-``pragma solidity 0.5.17;
+```pragma solidity 0.5.17;
 library SafeMath {function add(uint256 a, uint256 b) internal pure returns (uint256) {uint256 c = a + b; require(c >= a); return c;} function sub(uint256 a, uint256 b) internal pure returns (uint256) {require(b <= a); uint256 c = a - b; return c;}}
 contract LiteToken {using SafeMath for uint256;
     address public owner;
