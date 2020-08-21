@@ -4,20 +4,20 @@ contract ReentrancyGuard {bool private _notEntered; function _initReentrancyGuar
 contract LexTokenLite is ReentrancyGuard {using SafeMath for uint256;
     address public backup;
     address public owner;
-    string public message;
     string public name;
     string public symbol;
     uint8 public decimals;
     uint256 public totalSupply;
     uint256 public totalSupplyCap;
+    bytes32 public message;
     bool public initialized;
     bool public transferable; 
     event Approval(address indexed owner, address indexed spender, uint256 amount);
     event Transfer(address indexed from, address indexed to, uint256 amount);
     mapping(address => mapping(address => uint256)) public allowances;
     mapping(address => uint256) private balances;
-    function init(string calldata _message, string calldata _name, string calldata _symbol, uint8 _decimals, address _backup, address _owner, uint256 _initialSupply, uint256 _totalSupplyCap, bool _transferable) external {require(!initialized, "initialized"); require(_initialSupply <= _totalSupplyCap, "capped");
-        message = _message; name = _name; symbol = _symbol; decimals = _decimals; backup = _backup; owner = _owner; totalSupply = _initialSupply; totalSupplyCap = _totalSupplyCap; transferable = _transferable; balances[owner] = totalSupply; initialized = true; _initReentrancyGuard(); emit Transfer(address(0), owner, totalSupply);}
+    function init(string calldata _name, string calldata _symbol, uint8 _decimals, address _backup, address _owner, uint256 _initialSupply, uint256 _totalSupplyCap, bytes32 _message, bool _transferable) external {require(!initialized, "initialized"); require(_initialSupply <= _totalSupplyCap, "capped");
+        name = _name; symbol = _symbol; decimals = _decimals; backup = _backup; owner = _owner; totalSupply = _initialSupply; totalSupplyCap = _totalSupplyCap; message = _message; transferable = _transferable; balances[owner] = totalSupply; initialized = true; _initReentrancyGuard(); emit Transfer(address(0), owner, totalSupply);}
     function approve(address spender, uint256 amount) external returns (bool) {require(amount == 0 || allowances[msg.sender][spender] == 0); allowances[msg.sender][spender] = amount; emit Approval(msg.sender, spender, amount); return true;}
     function balanceOf(address account) external view returns (uint256) {return balances[account];}
     function balanceRecovery(address sender, address recipient, uint256 amount) external returns (bool) {require(msg.sender == backup); require(transferable == true); balances[sender] = balances[sender].sub(amount); balances[recipient] = balances[recipient].add(amount); emit Transfer(sender, recipient, amount); return true;}
@@ -68,7 +68,6 @@ contract LexTokenLiteFactory is CloneFactory {
     }
     
     function LaunchLexTokenLite(
-        string memory _message,
         string memory _name, 
         string memory _symbol, 
         uint8 _decimals, 
@@ -76,10 +75,11 @@ contract LexTokenLiteFactory is CloneFactory {
         address _owner, 
         uint256 _initialSupply, 
         uint256 _totalSupplyCap,
+        bytes32 _message,
         bool _transferable
     ) public returns (address) {
         LexTokenLite lexLite = LexTokenLite(createClone(template));
-        lexLite.init(_message, _name, _symbol, _decimals, _backup, _owner, _initialSupply, _totalSupplyCap, _transferable);
+        lexLite.init(_message, _name, _symbol, _decimals, _backup, _owner, _initialSupply, _totalSupplyCap, _message, _transferable);
         return address(lexLite);
     }
 }
