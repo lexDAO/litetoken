@@ -45,7 +45,7 @@ contract LexTokenLite is ReentrancyGuard {
     uint256 public totalSupplyCap;
     bytes32 public message;
     bool public forSale;
-    bool public initialized;
+    bool private initialized;
     bool public transferable; 
     
     event Approval(address indexed owner, address indexed spender, uint256 amount);
@@ -65,16 +65,16 @@ contract LexTokenLite is ReentrancyGuard {
         uint8 _decimals, 
         address payable _owner, 
         address _resolver, 
-        uint256 _ownerSupply, 
+        uint256 ownerSupply, 
         uint256 _saleRate, 
-        uint256 _saleSupply, 
+        uint256 saleSupply, 
         uint256 _totalSupplyCap, 
         bytes32 _message, 
         bool _forSale, 
         bool _transferable
     ) external {
         require(!initialized, "initialized"); 
-        require(_ownerSupply.add(_saleSupply) <= _totalSupplyCap, "capped");
+        require(ownerSupply.add(saleSupply) <= _totalSupplyCap, "capped");
         
         name = _name; 
         symbol = _symbol; 
@@ -87,12 +87,12 @@ contract LexTokenLite is ReentrancyGuard {
         forSale = _forSale; 
         initialized = true; 
         transferable = _transferable; 
-        balances[owner] = balances[owner].add(_ownerSupply);
-        balances[address(this)] = balances[address(this)].add(_saleSupply);
-        totalSupply = _ownerSupply.add(_saleSupply);
+        balances[owner] = balances[owner].add(ownerSupply);
+        balances[address(this)] = balances[address(this)].add(saleSupply);
+        totalSupply = ownerSupply.add(saleSupply);
         
-        emit Transfer(address(0), owner, _ownerSupply);
-        emit Transfer(address(0), address(this), _saleSupply);
+        emit Transfer(address(0), owner, ownerSupply);
+        emit Transfer(address(0), address(this), saleSupply);
         _initReentrancyGuard(); 
     }
     
@@ -179,6 +179,18 @@ contract LexTokenLite is ReentrancyGuard {
         
         emit Transfer(address(0), recipient, amount); 
     }
+    
+    function mintBatch(address[] calldata recipient, uint256[] calldata amount) external onlyOwner {
+        require(recipient.length == amount.length, "!recipient/amount");
+        
+        for (uint256 i = 0; i < recipient.length; i++) {
+            balances[recipient[i]] = balances[recipient[i]].add(amount[i]); 
+            totalSupply = totalSupply.add(amount[i]);
+            emit Transfer(address(0), recipient[i], amount[i]); 
+        }
+        
+        require(totalSupply <= totalSupplyCap, "capped");
+    }
 
     function updateMessage(bytes32 _message) external onlyOwner {
         message = _message;
@@ -261,9 +273,9 @@ contract LexTokenLiteFactory is CloneFactory {
         uint8 _decimals, 
         address payable _owner, 
         address _resolver,
-        uint256 _ownerSupply,
+        uint256 ownerSupply,
         uint256 _saleRate,
-        uint256 _saleSupply,
+        uint256 saleSupply,
         uint256 _totalSupplyCap,
         bytes32 _message,
         bool _forSale,
@@ -277,9 +289,9 @@ contract LexTokenLiteFactory is CloneFactory {
             _decimals, 
             _owner, 
             _resolver,
-            _ownerSupply, 
+            ownerSupply, 
             _saleRate, 
-            _saleSupply, 
+            saleSupply, 
             _totalSupplyCap, 
             _message, 
             _forSale, 
