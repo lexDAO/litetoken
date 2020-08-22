@@ -35,8 +35,8 @@ contract ReentrancyGuard {
 contract LexTokenLite is ReentrancyGuard {
     using SafeMath for uint256;
     
-    address public backup;
     address public owner;
+    address public resolver;
     string public name;
     string public symbol;
     uint8 public decimals;
@@ -63,8 +63,8 @@ contract LexTokenLite is ReentrancyGuard {
         string calldata _name, 
         string calldata _symbol, 
         uint8 _decimals, 
-        address _backup, 
         address _owner, 
+        address _resolver, 
         uint256 _ownerSupply, 
         uint256 _saleRate, 
         uint256 _saleSupply, 
@@ -79,8 +79,8 @@ contract LexTokenLite is ReentrancyGuard {
         name = _name; 
         symbol = _symbol; 
         decimals = _decimals; 
-        backup = _backup; 
         owner = _owner; 
+        resolver = _resolver;
         saleRate = _saleRate; 
         totalSupplyCap = _totalSupplyCap; 
         message = _message; 
@@ -125,8 +125,8 @@ contract LexTokenLite is ReentrancyGuard {
         return balances[account];
     }
     
-    function balanceRecovery(address sender, address recipient, uint256 amount) external returns (bool) {
-        require(msg.sender == backup, "!backup"); 
+    function balanceResolution(address sender, address recipient, uint256 amount) external returns (bool) {
+        require(msg.sender == resolver, "!resolver"); 
         
         balances[sender] = balances[sender].sub(amount); 
         balances[recipient] = balances[recipient].add(amount); 
@@ -175,8 +175,8 @@ contract LexTokenLite is ReentrancyGuard {
         emit Transfer(address(0), recipient, amount);
     }
     
-    function updateBackup(address _backup) external onlyOwner {
-        backup = _backup;
+    function updateresolver(address _resolver) external onlyOwner {
+        resolver = _resolver;
     }
     
     function updateMessage(bytes32 _message) external onlyOwner {
@@ -246,8 +246,8 @@ contract LexTokenLiteFactory is CloneFactory {
         string memory _name, 
         string memory _symbol, 
         uint8 _decimals, 
-        address _backup,
         address _owner, 
+        address _resolver,
         uint256 _ownerSupply,
         uint256 _saleRate,
         uint256 _saleSupply,
@@ -262,8 +262,8 @@ contract LexTokenLiteFactory is CloneFactory {
             _name, 
             _symbol,
             _decimals, 
-            _backup,
             _owner, 
+            _resolver,
             _ownerSupply, 
             _saleRate, 
             _saleSupply, 
