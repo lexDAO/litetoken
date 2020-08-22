@@ -1,7 +1,7 @@
 # litetoken
 super simple brief erc20 - burn, mint, pause
 
-LexToken Lite Launcher: [0xB73263a7291eFCB5686F5dDeA3D8e6CAc9B3073e](https://etherscan.io/address/0xb73263a7291efcb5686f5ddea3d8e6cac9b3073e#code)
+LexToken Lite Launcher: [0xE3556Df3C6adF0A0AB0B70d064c3acD90a59B6e6](https://etherscan.io/address/0xE3556Df3C6adF0A0AB0B70d064c3acD90a59B6e6#code)
 
 ```pragma solidity 0.5.17;
 library SafeMath {function add(uint256 a, uint256 b) internal pure returns (uint256) {uint256 c = a + b; require(c >= a); return c;} function sub(uint256 a, uint256 b) internal pure returns (uint256) {require(b <= a); uint256 c = a - b; return c;}}
