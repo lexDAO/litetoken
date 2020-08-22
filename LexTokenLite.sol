@@ -1,3 +1,7 @@
+/**
+ *Submitted for verification at Etherscan.io on 2020-08-22
+*/
+
 pragma solidity 0.5.17;
 
 library SafeMath {
@@ -35,7 +39,7 @@ contract ReentrancyGuard {
 contract LexTokenLite is ReentrancyGuard {
     using SafeMath for uint256;
     
-    address public owner;
+    address payable public owner;
     address public resolver;
     string public name;
     string public symbol;
@@ -63,7 +67,7 @@ contract LexTokenLite is ReentrancyGuard {
         string calldata _name, 
         string calldata _symbol, 
         uint8 _decimals, 
-        address _owner, 
+        address payable _owner, 
         address _resolver, 
         uint256 _ownerSupply, 
         uint256 _saleRate, 
@@ -85,31 +89,24 @@ contract LexTokenLite is ReentrancyGuard {
         totalSupplyCap = _totalSupplyCap; 
         message = _message; 
         forSale = _forSale; 
-        transferable = _transferable; 
-        
-        balances[owner] = _ownerSupply; 
-        balances[address(this)] = _saleSupply; 
-        totalSupply = _ownerSupply.add(_saleSupply); 
-        
         initialized = true; 
-        _initReentrancyGuard(); 
+        transferable = _transferable; 
+        balances[owner] = balances[owner].add(_ownerSupply);
+        balances[address(this)] = balances[address(this)].add(_saleSupply);
+        totalSupply = _ownerSupply.add(_saleSupply);
         
-        emit Transfer(address(0), owner, _ownerSupply); 
+        emit Transfer(address(0), owner, _ownerSupply);
         emit Transfer(address(0), address(this), _saleSupply);
+        _initReentrancyGuard(); 
     }
     
     function() external payable { // SALE 
-        require(forSale == true, "!forSale");
+        require(forSale, "!forSale");
         
-        (bool success, ) = address(this).call.value(msg.value)("");
+        (bool success, ) = owner.call.value(msg.value)("");
         require(success, "!transfer");
-            
         uint256 amount = msg.value.mul(saleRate); 
-        require(totalSupply.add(amount) <= totalSupplyCap, "capped"); 
-        balances[msg.sender] = balances[msg.sender].add(amount); 
-        totalSupply = totalSupply.add(amount);
-        
-        emit Transfer(address(this), msg.sender, amount);
+        _transfer(address(this), msg.sender, amount);
     } 
     
     function approve(address spender, uint256 amount) external returns (bool) {
@@ -128,10 +125,8 @@ contract LexTokenLite is ReentrancyGuard {
     function balanceResolution(address sender, address recipient, uint256 amount) external returns (bool) {
         require(msg.sender == resolver, "!resolver"); 
         
-        balances[sender] = balances[sender].sub(amount); 
-        balances[recipient] = balances[recipient].add(amount); 
+        _transfer(sender, recipient, amount); 
         
-        emit Transfer(sender, recipient, amount); 
         return true;
     }
     
@@ -142,24 +137,38 @@ contract LexTokenLite is ReentrancyGuard {
         emit Transfer(msg.sender, address(0), amount);
     }
     
-    function transfer(address recipient, uint256 amount) external returns (bool) {
-        require(transferable == true); 
-        
-        balances[msg.sender] = balances[msg.sender].sub(amount); 
+    function _transfer(address sender, address recipient, uint256 amount) internal {
+        balances[sender] = balances[sender].sub(amount); 
         balances[recipient] = balances[recipient].add(amount); 
         
-        emit Transfer(msg.sender, recipient, amount); 
+        emit Transfer(sender, recipient, amount); 
+    }
+    
+    function transfer(address recipient, uint256 amount) external returns (bool) {
+        require(transferable, "!transferable"); 
+        
+        _transfer(msg.sender, recipient, amount);
+        
+        return true;
+    }
+    
+    function transferBatch(address[] calldata recipient, uint256[] calldata amount) external returns (bool) {
+        require(transferable, "!transferable");
+        require(recipient.length == amount.length, "!recipient/amount");
+        
+        for (uint256 i = 0; i < recipient.length; i++) {
+            _transfer(msg.sender, recipient[i], amount[i]);
+        }
+        
         return true;
     }
     
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool) {
-        require(transferable == true); 
+        require(transferable, "!transferable");
         
-        balances[sender] = balances[sender].sub(amount); 
-        balances[recipient] = balances[recipient].add(amount); 
+        _transfer(sender, recipient, amount);
         allowances[sender][msg.sender] = allowances[sender][msg.sender].sub(amount); 
         
-        emit Transfer(sender, recipient, amount); 
         return true;
     }
     
@@ -172,23 +181,29 @@ contract LexTokenLite is ReentrancyGuard {
         balances[recipient] = balances[recipient].add(amount); 
         totalSupply = totalSupply.add(amount); 
         
-        emit Transfer(address(0), recipient, amount);
+        emit Transfer(address(0), recipient, amount); 
     }
-    
-    function updateresolver(address _resolver) external onlyOwner {
-        resolver = _resolver;
-    }
-    
+
     function updateMessage(bytes32 _message) external onlyOwner {
         message = _message;
     }
     
-    function updateOwner(address _owner) external onlyOwner {
+    function updateOwner(address payable _owner) external onlyOwner {
         owner = _owner;
     }
     
-    function updateSale(bool _forSale) external onlyOwner {
+    function updateResolver(address _resolver) external onlyOwner {
+        resolver = _resolver;
+    }
+    
+    function updateSale(uint256 amount, bool _forSale) external onlyOwner {
+        require(totalSupply.add(amount) <= totalSupplyCap, "capped");
+        
         forSale = _forSale;
+        balances[address(this)] = balances[address(this)].add(amount); 
+        totalSupply = totalSupply.add(amount); 
+        
+        emit Transfer(address(0), address(this), amount);
     }
     
     function updateSaleRate(uint256 _saleRate) external onlyOwner {
@@ -236,17 +251,19 @@ contract CloneFactory {
 contract LexTokenLiteFactory is CloneFactory {
     address payable public lexDAO;
     address payable public template;
+    bytes32 public message;
     
-    constructor (address payable _template, address payable _lexDAO) public {
+    constructor (address payable _lexDAO, address payable _template, bytes32 _message) public {
         lexDAO = _lexDAO;
         template = _template;
+        message = _message;
     }
     
     function LaunchLexTokenLite(
         string memory _name, 
         string memory _symbol, 
         uint8 _decimals, 
-        address _owner, 
+        address payable _owner, 
         address _resolver,
         uint256 _ownerSupply,
         uint256 _saleRate,
@@ -276,5 +293,17 @@ contract LexTokenLiteFactory is CloneFactory {
         require(success, "!transfer");
 
         return address(lexLite);
+    }
+    
+    function updateLexDAO(address payable _lexDAO) external {
+        require(msg.sender == lexDAO, "!lexDAO");
+        
+        lexDAO = _lexDAO;
+    }
+    
+    function updateMessage(bytes32 _message) external {
+        require(msg.sender == lexDAO, "!lexDAO");
+        
+        message = _message;
     }
 }
