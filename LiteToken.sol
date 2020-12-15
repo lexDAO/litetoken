@@ -11,7 +11,7 @@ contract LiteToken {using SafeMath for uint256;
     event Approval(address indexed owner, address indexed spender, uint256 value);
     event Transfer(address indexed from, address indexed to, uint256 amount);
     mapping(address => uint256) private balances;
-    mapping(address => mapping(address => uint256)) public allowances;
+    mapping(address => mapping(address => uint256)) public allowance;
     constructor(string memory _name, string memory _symbol, uint8 _decimals, address _owner, uint256 _initialSupply, uint256 _totalSupplyCap, bool _transferable) public {require(_initialSupply <= _totalSupplyCap, "capped");
         name = _name; symbol = _symbol; decimals = _decimals; owner = _owner; totalSupply = _initialSupply; totalSupplyCap = _totalSupplyCap; transferable = _transferable; balances[owner] = totalSupply; emit Transfer(address(0), owner, totalSupply);}
     function approve(address spender, uint256 amount) external returns (bool) {require(amount == 0 || allowances[msg.sender][spender] == 0); allowances[msg.sender][spender] = amount; emit Approval(msg.sender, spender, amount); return true;}
